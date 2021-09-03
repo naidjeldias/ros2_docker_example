@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+    ros_base:
+        image: ros:foxy-opencv4
+        container_name: ros_base
+        runtime: nvidia
+        tty: true
+        stdin_open: true
+        ipc: 'host'
+        network_mode: "host"
+        build: 
+            context: .
+            args:
+                ros_distro: foxy
+            dockerfile: Dockerfile
+        environment:        
+            - NVIDIA_VISIBLE_DEVICES=all
+            - NVIDIA_DRIVER_CAPABILITIES=all
+    alpr_ros:
+        container_name: alpr_ros
+        image: alpr:ros
+        runtime: nvidia
+        tty: true
+        stdin_open: true
+        ipc: "host"
+        pid: "host"
+        network_mode: "host"
+        volumes:
+            - /dev/shm:/dev/shm
+        build: 
+            context: .
+            dockerfile: Dockerfile.ros-ws
+        environment:
+            - ROS_DOMAIN_ID=69
+            - NVIDIA_VISIBLE_DEVICES=all
+            - NVIDIA_DRIVER_CAPABILITIES=all
+        command: RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ros2 launch darknet_ros darknet_ros.launch.py

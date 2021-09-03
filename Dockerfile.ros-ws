@@ -1,0 +1,35 @@
+FROM ros:foxy-opencv4
+
+WORKDIR $CATKIN_WS
+
+# install middlewares dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+    && rm -rf /var/lib/apt/lists/*
+
+# cloning repositories
+RUN git clone --recursive https://github.com/leggedrobotics/darknet_ros.git -b foxy src/darknet_ros
+RUN git clone https://github.com/ros-perception/vision_opencv.git -b ros2 src/vision_opencv
+RUN git clone https://github.com/ros-perception/image_common.git -b ros2 src/image_common
+
+# install overlay dependencies
+# RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+#     apt-get update && rosdep install -y \
+#       --from-paths src \
+#       --ignore-src \
+#       --rosdistro $ROS_DISTRO \
+#     && rm -rf /var/lib/apt/lists/*
+
+#building workspace
+RUN . /opt/ros/$ROS_DISTRO/setup.sh \
+    && colcon build \
+    --symlink-install \
+    --cmake-args -DCMAKE_BUILD_TYPE=Release \
+    --packages-up-to darknet_ros
+
+
+# source overlay from entrypoint
+RUN sed --in-place \
+      's|^source .*|source "$CATKIN_WS/install/setup.bash"|' \
+      /ros_entrypoint.sh
